@@ -19,7 +19,7 @@ class Objective(BaseObjective):
     requirements = [
         "pip:git+https://github.com/mlcommons/algorithmic-efficiency"
         "#egg=algorithmic_efficiency[full]",
-        'pytorch:pytorch'
+        'pytorch:pytorch', 'torchvision'
     ]
 
     # Minimal version of benchopt required to run this benchmark.
@@ -38,7 +38,7 @@ class Objective(BaseObjective):
         self.model_init_rng = 42
         if framework == 'jax':
             self.eval_rng = jax.random.PRNGKey(self.eval_rng)
-            self.model_init_rng = jax.random.PRNGKey(self.model_init_rng)
+        self.model_init_rng = jax.random.PRNGKey(self.model_init_rng)
 
     def compute(self, model):
         model_params, model_state = model
