@@ -4,7 +4,8 @@ from benchopt import BaseObjective, safe_import_context
 # - skipping import to speed up autocompletion in CLI.
 # - getting requirements info when all dependencies are not installed.
 with safe_import_context() as import_ctx:
-    import numpy as np
+    import algorithmic_efficiency  # noqa: F401
+    import jax.random
 
 
 # The benchmark objective must be named `Objective` and
@@ -12,47 +13,51 @@ with safe_import_context() as import_ctx:
 class Objective(BaseObjective):
 
     # Name to select the objective in the CLI and to display the results.
-    name = "Ordinary Least Squares"
+    name = "ML Commons Algorithm Efficiency"
 
-    # List of parameters for the objective. The benchmark will consider
-    # the cross product for each key in the dictionary.
-    # All parameters 'p' defined here are available as 'self.p'.
-    # This means the OLS objective will have a parameter `self.whiten_y`.
-    parameters = {
-        'whiten_y': [False, True],
-    }
+    install_cmd = "conda"
+    requirements = [
+        "pip:git+https://github.com/mlcommons/algorithmic-efficiency"
+        "#egg=algorithmic_efficiency[full]"
+    ]
 
     # Minimal version of benchopt required to run this benchmark.
     # Bump it up if the benchmark depends on a new feature of benchopt.
     min_benchopt_version = "1.3"
 
-    def set_data(self, X, y):
-        # The keyword arguments of this function are the keys of the dictionary
-        # returned by `Dataset.get_data`. This defines the benchmark's
-        # API to pass data. This is customizable for each benchmark.
-        self.X, self.y = X, y
+    parameter = {
+        'eval_batch_size': 1024,
+    }
 
-        # `set_data` can be used to preprocess the data. For instance,
-        # if `whiten_y` is True, remove the mean of `y`.
-        if self.whiten_y:
-            y -= y.mean(axis=0)
+    def set_data(self, workload, data_dir, framework):
+        self.workload, self.data_dir = workload, data_dir
+        self.framework = framework
 
-    def compute(self, beta):
-        # The arguments of this function are the outputs of the
-        # `Solver.get_result`. This defines the benchmark's API to pass
-        # solvers' result. This is customizable for each benchmark.
-        diff = self.y - self.X.dot(beta)
+        self.eval_rng = 27
+        self.model_init_rng = 42
+        if framework == 'jax':
+            self.eval_rng = jax.random.PRNGKey(self.eval_rng)
+            self.model_init_rng = jax.random.PRNGKey(self.model_init_rng)
 
-        # This method can return many metrics in a dictionary. One of these
-        # metrics needs to be `value` for convergence detection purposes.
-        return dict(
-            value=.5 * diff.dot(diff),
+    def compute(self, model):
+        model_params, model_state = model
+
+        objective = self.workload.eval_model(
+            self.workload.eval_batch_size,
+            model_params,
+            model_state,
+            self.eval_rng,
+            self.data_dir,
+            None,
+            0
         )
+        objective['value'] = objective['test/loss']
+        return objective
 
     def get_one_solution(self):
         # Return one solution. The return value should be an object compatible
         # with `self.compute`. This is mainly for testing purposes.
-        return np.zeros(self.X.shape[1])
+        return self.workload.init_model_fn(self.model_init_rng)
 
     def get_objective(self):
         # Define the information to pass to each solver to run the benchmark.
@@ -61,6 +66,6 @@ class Objective(BaseObjective):
         # benchmark's API for passing the objective to the solver.
         # It is customizable for each benchmark.
         return dict(
-            X=self.X,
-            y=self.y,
+            workload=self.workload, data_dir=self.data_dir,
+            framework=self.framework
         )
