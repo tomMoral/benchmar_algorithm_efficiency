@@ -68,17 +68,17 @@ class Solver(JaxSubmissionSolver):
 
         per_device_rngs = jax.random.split(rng, jax.local_device_count())
         optimizer_state, opt_update_fn = optimizer_state
-        new_optimizer_state, updated_params, new_model_state = pmapped_update_params(
-            self.workload,
-            opt_update_fn,
-            model_params,
-            model_state,
-            None,
-            batch,
-            optimizer_state,
-            per_device_rngs
+        (
+            new_optimizer_state, updated_params, new_model_state
+        ) = pmapped_update_params(
+            self.workload, opt_update_fn, model_params, model_state, None,
+            batch, optimizer_state, per_device_rngs
         )
-        return (new_optimizer_state, opt_update_fn), updated_params, new_model_state
+        return (
+            (new_optimizer_state, opt_update_fn),
+            updated_params,
+            new_model_state
+        )
 
 
 # We need to jax.pmap here instead of inside update_params because the latter

@@ -18,7 +18,8 @@ class Objective(BaseObjective):
     install_cmd = "conda"
     requirements = [
         "pip:git+https://github.com/mlcommons/algorithmic-efficiency"
-        "#egg=algorithmic_efficiency[full]"
+        "#egg=algorithmic_efficiency[full]",
+        'pytorch:pytorch'
     ]
 
     # Minimal version of benchopt required to run this benchmark.

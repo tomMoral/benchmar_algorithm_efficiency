@@ -5,9 +5,9 @@ from benchmark_utils.workload_dataset import WorkloadDataset
 class Dataset(WorkloadDataset):
 
     # Name to select the dataset in the CLI and to display the results.
-    name = "Simulated"
+    name = "Cifar"
 
     workload_module = (
-        "algorithmic_efficiency.workloads.mnist.mnist_{framework}.workload"
+        "algorithmic_efficiency.workloads.cifar.cifar_{framework}.workload"
     )
-    workload_class = "MnistWorkload"
+    workload_class = "CifarWorkload"
