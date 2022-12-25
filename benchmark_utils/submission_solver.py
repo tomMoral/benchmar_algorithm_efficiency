@@ -124,6 +124,10 @@ class SubmissionSolver(BaseSolver):
 
 class TorchSubmissionSolver(SubmissionSolver):
 
+    test_config = {
+        'dataset': dict(framework='pytorch')
+    }
+
     def skip(self, workload, data_dir, framework):
         if framework != 'pytorch':
             return True, "Only for framework=='pytorch'"
@@ -131,6 +135,10 @@ class TorchSubmissionSolver(SubmissionSolver):
 
 
 class JaxSubmissionSolver(SubmissionSolver):
+
+    test_config = {
+        'dataset': dict(framework='jax')
+    }
 
     def skip(self, workload, data_dir, framework):
         if framework != 'jax':
